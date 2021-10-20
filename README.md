@@ -1,0 +1,2 @@
+# playframework_websocket_redis
+PlayFrameworkでRedis PubSubを利用したWebSocket
