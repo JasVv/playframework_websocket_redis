@@ -1,0 +1,23 @@
+.component {
+  width: 50%;
+
+}
+.box{
+  padding: 5px;
+  margin-bottom: 5px;
+  list-style-type: none;
+  word-wrap: break-word;
+}
+.left {
+  background-color: #D3D3D3;
+  width: 60%;
+  float:left;
+}
+.right {
+  background-color: #ADFF2F;
+  width: 60%;
+  float:right;
+}
+p {
+  margin: 0px;
+}
