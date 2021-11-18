@@ -1,6 +1,6 @@
 package controllers
 
-import akka.actor.{ActorRef, ActorSystem, Props}
+import akka.actor.{ActorSystem, Props}
 import akka.stream.Materializer
 import akka.stream.scaladsl.{Flow, Keep}
 import chat._
@@ -13,7 +13,6 @@ import play.http.websocket.Message.Ping
 
 import java.util.UUID
 import javax.inject._
-import scala.collection.mutable
 import scala.concurrent.ExecutionContext
 import scala.util.control.NonFatal
 
@@ -23,8 +22,6 @@ class ChatController @Inject()(override val controllerComponents: ControllerComp
                                materializer: Materializer,
                                ec: ExecutionContext,
                               ) extends BaseController {
-  val chatRoomActors: mutable.Map[String, ActorRef] = mutable.Map[String, ActorRef]()
-
   implicit val jsonMessageFlowTransformer: MessageFlowTransformer[JsValue, Either[Ping, JsValue]] = {
     def closeOnException[T](block: => T) =
       try {
@@ -49,9 +46,9 @@ class ChatController @Inject()(override val controllerComponents: ControllerComp
   }
 
   def ws(roomId: String): WebSocket = WebSocket.accept[JsValue, Either[Ping, JsValue]] { _ =>
-    val chatRoomActorRef = chatRoomActors.getOrElse(roomId, {
+    val chatRoomActorRef = ChatActorMap.chatRoomActors.getOrElse(roomId, {
       val actor = system.actorOf(Props(classOf[ChatRoomActor], roomId, materializer, ec), name = s"chatRoom_$roomId")
-      chatRoomActors.put(roomId, actor)
+      ChatActorMap.chatRoomActors.put(roomId, actor)
       actor
     })
 
@@ -69,7 +66,7 @@ class ChatController @Inject()(override val controllerComponents: ControllerComp
 
   // 指定したチャットルームにAPIでメッセージを送信する
   def send(roomId: String, message: String): Action[AnyContent] = Action { implicit request =>
-    chatRoomActors.get(roomId) match {
+    ChatActorMap.chatRoomActors.get(roomId) match {
       case Some(chatRoom) =>
         val text = Json.obj(
           "id" -> UUID.randomUUID().toString,

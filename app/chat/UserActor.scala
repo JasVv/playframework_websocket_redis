@@ -13,6 +13,7 @@ import scala.concurrent.{ExecutionContext, Future}
  * ユーザ自身の情報に加え、クライアントとのやりとりする [[out: ActorRef]] と、自身の所属するChatRoomActorの [[chatRoom: ActorRef]] を持つ
  */
 class UserActor(out: ActorRef, chatRoom: ActorRef, userId: String, ec: ExecutionContext) extends Actor {
+  var isClosed = false
 
   override def receive: Receive = {
     case NoActMessage() =>
@@ -30,13 +31,14 @@ class UserActor(out: ActorRef, chatRoom: ActorRef, userId: String, ec: Execution
 
   // WebSocketが切断された場合はpostStopが呼ばれる。postStopは所属ChatRoomにメッセージを投げ、自身への参照を削除させる。
   override def postStop(): Unit = {
+    isClosed = true
     chatRoom ! DeleteUserMessage(userId)
   }
 
   private def ping(): Unit = Future {
-    while (true) {
+    while (!isClosed) {
       out ! Left(new Ping(ByteString(Array[Byte](8, 1, 8, 1))))
-      Thread.sleep(10000)
+      Thread.sleep(2000)
     }
   }(ec)
 }
